@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <cmath>
+#include <stack>
 #include "glm\glm.hpp"
 #include "glm\gtc\type_ptr.hpp"
 #include "glm\gtc\matrix_transform.hpp"
@@ -19,6 +20,7 @@ GLuint renderingProgram;
 GLuint vao[numVAOs];
 GLuint vbo[numVBOs];
 util utility;
+stack<glm::mat4> mvStack;
 
 // allocate variables used in display() function, so that they won't need to be allocated 
 // during rendering 
@@ -71,19 +73,33 @@ void init(GLFWwindow* window) {
 	renderingProgram = utility.createShaderProgram("vertShader.glsl", "fragShader.glsl");
 	cameraX = 0.0f;
 	cameraY = 0.0f;
-	cameraZ = 420.0f;
+	cameraZ = 10.0f;
 
 	// shift down y to reveal perspective
 	cubeLocX = 0.0f;
 	cubeLocY = -2.0f;
 	cubeLocZ = 0.0f;
 
-	pyrLocX = 0.0f;
-	pyrLocY = 3.0f;
-	pyrLocZ = -5.0f;
+	pyrLocX = 4.0f;
+	pyrLocY = 0.0f;
+	pyrLocZ = 0.0f;
 
 
 	setupVertices();
+
+	glfwGetFramebufferSize(window, &width, &height);
+	aspect = (float)width / (float)height;
+	pMat = glm::perspective(1.0472f, aspect, 0.01f, 1000.0f);
+}
+
+void window_reshape_callback(GLFWwindow* window, int newWidth, int newHeight) {
+
+	// new width and height provided by the callback 
+	aspect = (float)newWidth / (float)newHeight;
+
+	// sets screen region associated with framebuffer
+	glViewport(0, 0, newWidth, newHeight);
+	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 }
 
 void display(GLFWwindow* window, double currentTime) {
@@ -92,78 +108,68 @@ void display(GLFWwindow* window, double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(renderingProgram);
 
-	// get the uniform variables for the model, view, and projection matrices and also the current time 
-	mLoc = glGetUniformLocation(renderingProgram, "m_matrix");
-	vLoc = glGetUniformLocation(renderingProgram, "v_matrix");
+	// uniform variables 
+	mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
 	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
-	tfLoc = glGetUniformLocation(renderingProgram, "tf");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
 
-	// build perspective matrix
-	glfwGetFramebufferSize(window, &width, &height);
-	aspect = (float)width / (float)height;
-
-	// 1.0472 radians = 60 degrees
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
-
-	// build view matrix, model matrix, and model-view matrix
+	// push view matrix onto the stack 
 	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+	mvStack.push(vMat);
+
+	//-------------------------------- pyramid == sun ---------------------------//
+	mvStack.push(mvStack.top());
+	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // sun position;
+	mvStack.push(mvStack.top());
+	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f)); // sun rotation
 	
-	tMat = glm::translate(glm::mat4(1.0f),	
-		glm::vec3(sin(0.35f * currentTime) * 2.0f, cos(0.5f * currentTime) * 2.0f, sin(0.7f * currentTime) * 2.0f));
-	
-	rMat = glm::rotate(glm::mat4(1.0f), 1.75f * (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));	
-	rMat = glm::rotate(rMat, 1.75f * (float)currentTime, glm::vec3(1.0f, 0.0f, 0.0f));	
-	rMat = glm::rotate(rMat, 1.75f * (float)currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
-	
-	mMat = tMat * rMat;	
-	
-	// copy perspective and MV matrices to corresponding uniform variables	
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
-
-	// The shader needs the model matrix and the view matrix 
-	glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(vMat));
-	glUniformMatrix4fv(mLoc, 1, GL_FALSE, glm::value_ptr(mMat));
-	timeFactor = float(currentTime);
-	glUniform1f(tfLoc, float(timeFactor));
-	
-	// associate VBO with the corresponding vertex attribute in the vertex shader 	
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);	
-	glEnableVertexAttribArray(0);
-	
-	// adjust openGL settings and draw model 	
-	glEnable(GL_DEPTH_TEST);	
-	glDepthFunc(GL_LEQUAL);	
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 100000);
-
-
-
-	tMat = glm::translate(glm::mat4(1.0f),
-		glm::vec3(cos(0.35f * currentTime) * 8.0f, sin(0.5f * currentTime) * 8.0f, cos(0.7f * currentTime) * 8.0f));
-
-	rMat = glm::rotate(glm::mat4(1.0f), 1.75f * (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
-	rMat = glm::rotate(rMat, 1.75f * (float)currentTime, glm::vec3(1.0f, 0.0f, 0.0f));
-	rMat = glm::rotate(rMat, 1.75f * (float)currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
-
-	mMat = tMat * rMat;
-	// copy perspective and MV matrices to corresponding uniform variables	
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
-
-	// The shader needs the model matrix and the view matrix 
-	//glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(vMat));
-	glUniformMatrix4fv(mLoc, 1, GL_FALSE, glm::value_ptr(mMat));
-	timeFactor = float(currentTime);
-	glUniform1f(tfLoc, float(timeFactor));
-
-	// associate VBO with the corresponding vertex attribute in the vertex shader 	
+	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LEQUAL);
+	glEnable(GL_CULL_FACE);
+	glDrawArrays(GL_TRIANGLES, 0, 18); // draw the sun 
+	mvStack.pop();                     // remove the suns rotation from the stack 
 
-	// adjust openGL settings and draw model 	
+	//------------------------------- cube == planet ---------------------------//
+	mvStack.push(mvStack.top());
+	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(sin((float)currentTime) * 4.0f, 0.0f, cos((float)currentTime) * 4.0f));
+	mvStack.push(mvStack.top());
+	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0, 1.0, 0.0)); // planet rotation
+
+	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 18, 100000);
+	glFrontFace(GL_CW);
+	glDrawArrays(GL_TRIANGLES, 0, 36); // draw the sun 
+	mvStack.pop(); // remove the planet's rotation from mthe stack 
+
+	//------------------------- smaller cube == moon ---------------------------//
+
+	mvStack.push(mvStack.top());
+	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, sin((float) currentTime) * 2.0f, cos((float)currentTime) * 2.0f));
+	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0, 0.0, 1.0)); 
+	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f)); // planet rotation
+
+	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glFrontFace(GL_CCW);
+	glDrawArrays(GL_TRIANGLES, 0, 36); // draw the sun 
+	
+	// pop moon scale/rotation/position, planet position, sun position, and view matrices from the stack 
+	mvStack.pop();
+	mvStack.pop();
+	mvStack.pop();
+	mvStack.pop();
 }
 
 
@@ -184,7 +190,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// last two parameters allow for full screen mode and window sharing 
-	GLFWwindow* window = glfwCreateWindow(600, 600, "Fuck Yeah", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Bad solar system", NULL, NULL);
 
 	// Creating a glfw window does not automatically make the associated OpenGL context current
 	glfwMakeContextCurrent(window);
@@ -197,6 +203,7 @@ int main() {
 	// vertical synchronization enabled
 	glfwSwapInterval(1);
 
+	glfwSetWindowSizeCallback(window, window_reshape_callback);
 	init(window);
 
 	while (!glfwWindowShouldClose(window)) {
