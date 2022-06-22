@@ -9,19 +9,20 @@
 #include "glm\gtc\type_ptr.hpp"
 #include "glm\gtc\matrix_transform.hpp"
 #include "util.h"
+#include "Sphere.h"
 using namespace std;
 
 #define numVAOs 1
-#define numVBOs 2
+#define numVBOs 3
 
 float cameraX, cameraY, cameraZ;
-float cubeLocX, cubeLocY, cubeLocZ, pyrLocX, pyrLocY, pyrLocZ;
 GLuint renderingProgram;
 GLuint vao[numVAOs];
 GLuint vbo[numVBOs];
 GLuint mapTexture;
 util utility;
 stack<glm::mat4> mvStack;
+Sphere mySphere(48);
 
 // allocate variables used in display() function, so that they won't need to be allocated 
 // during rendering 
@@ -34,31 +35,51 @@ glm::mat4 pMat, vMat, mMat, mvMat, tMat, rMat;
 // 36 vertices, 12 triangles, makes a 2x2x2 cube placed at the origin 
 void setupVertices(void) {
 
-	float pyramidPositions[54] = {
-		-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // front face 
-		1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // right face
-		1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // back face 
-		-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // left face
-		-1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // base - left front
-		1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f  // base - right back
-	};
+	std::vector<int> ind = mySphere.getIndices();
+	std::vector<glm::vec3> vert = mySphere.getVertices();
+	std::vector<glm::vec2> tex = mySphere.getTexCoords();
+	std::vector<glm::vec3> norm = mySphere.getNormals();
 
-	float pyrTexCoords[36] = {
-		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,          // top and back faces
-		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,          // back and left faces 
-		0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f
-	};
+	// vertex positions
+	std::vector<float> pvalues;
 
+	// texture coordinates
+	std::vector<float> tvalues;
+
+	// normal vectors
+	std::vector<float> nvalues;
+
+	int numIndices = mySphere.getNumIndices();
+
+	for (int i = 0; i < numIndices; i++) {
+		pvalues.push_back((vert[ind[i]]).x);
+		pvalues.push_back((vert[ind[i]]).y);
+		pvalues.push_back((vert[ind[i]]).z);
+
+		tvalues.push_back((tex[ind[i]]).s);
+		tvalues.push_back((tex[ind[i]]).t);
+
+		nvalues.push_back((norm[ind[i]]).x);
+		nvalues.push_back((norm[ind[i]]).y);
+		nvalues.push_back((norm[ind[i]]).z);
+	}
 
 	glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
-	glGenBuffers(numVBOs, vbo);
+	glGenBuffers(3, vbo);
 
+	// put the vertices into buffer #0
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidPositions), pyramidPositions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pvalues.size() * 4, &pvalues[0], GL_STATIC_DRAW);
 
+	// put the texture coordinates into buffer #1
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(pyrTexCoords), pyrTexCoords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, tvalues.size() * 4, &tvalues[0], GL_STATIC_DRAW);
+
+	// put the texture coordinates into buffer #2
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+	glBufferData(GL_ARRAY_BUFFER, nvalues.size() * 4, &nvalues[0], GL_STATIC_DRAW);
+
 }
 
 
@@ -67,11 +88,6 @@ void init(GLFWwindow* window) {
 	cameraX = 0.0f;
 	cameraY = 0.0f;
 	cameraZ = 10.0f;
-
-	// shift down y to reveal perspective
-	pyrLocX = 0.0f;
-	pyrLocY = -2.0f;
-	pyrLocZ = 0.0f;
 
 	setupVertices();
 
@@ -108,11 +124,11 @@ void display(GLFWwindow* window, double currentTime) {
 	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
 	mvStack.push(vMat);
 
-	//-------------------------------- pyramid ---------------------------//
+	//-------------------------------- Object ---------------------------//
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // pyramid position;
+	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // object position;
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f)); // pyramid rotation
+	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f)); // object rotation
 
 	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
 
@@ -125,12 +141,16 @@ void display(GLFWwindow* window, double currentTime) {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
 
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mapTexture);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, 18); // draw the sun
+	glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices()); // draw the sun
 	mvStack.pop();
 	mvStack.pop();
 }
@@ -153,7 +173,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// last two parameters allow for full screen mode and window sharing 
-	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Texture Map #1", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Sphere", NULL, NULL);
 
 	// Creating a glfw window does not automatically make the associated OpenGL context current
 	glfwMakeContextCurrent(window);

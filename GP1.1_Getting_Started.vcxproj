@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="Graphics_Workspace.cpp" />
     <ClCompile Include="matrixUtils.cpp" />
+    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +163,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="matrixUtils.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -134,7 +134,21 @@ GLuint util::loadTexture(const char* texImagePath) {
 		cout << "could not find texture file " << texImagePath << endl;
 	}
 
+	// If mipmapping 
 	glBindTexture(GL_TEXTURE_2D, textureID);
+	//glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	//float redColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, redColor);
+	glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+	// if also anisotropic filtering 
+	if (glewIsSupported("GL_EXT_texture_filter_anisotropic")) {
+		GLfloat anisoSetting = 0.0f;
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisoSetting);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisoSetting);
+	}
 
 	return textureID;
 }
