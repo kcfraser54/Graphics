@@ -1,9 +1,15 @@
 #version 430 
 layout (location=0) in vec3 position;
-uniform mat4 m_matrix;
+layout (location=1) in vec2 texCoord;
+
+// texture coordinate output to rasterizer for interpolation
+out vec2 tc; 
+
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
-out vec4 varyingColor;
+
+layout (binding=0) uniform sampler2D samp;  // not used in the vertex shader 
+
 mat4 buildRotateX(float rad);
 mat4 buildRotateY(float rad);
 mat4 buildRotateZ(float rad);
@@ -12,7 +18,7 @@ mat4 buildScale(float x, float y, float z);
 
 void main(void) { 
 	gl_Position = proj_matrix * mv_matrix * vec4(position, 1.0);
-	varyingColor = vec4(position, 1.0) * 0.5 + vec4(0.5, 0.5, 0.5, 0.5);
+	tc = texCoord;
 }
 
 mat4 buildTranslate(float x, float y, float z) {

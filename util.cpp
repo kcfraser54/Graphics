@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <SOIL2/SOIL2.h>
 using namespace std;
 
 
@@ -123,4 +124,17 @@ string util::readShaderSource(const char* filePath) {
 	}
 	fileStream.close();
 	return content;
+}
+
+GLuint util::loadTexture(const char* texImagePath) {
+	GLuint textureID;
+	textureID = SOIL_load_OGL_texture(texImagePath,
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+	if (textureID == 0) {
+		cout << "could not find texture file " << texImagePath << endl;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	return textureID;
 }

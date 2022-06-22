@@ -17,6 +17,9 @@ public:
 	GLuint createShaderProgram(const char* vp, const char* tCS, const char* tES, const char* fp);
 	GLuint createShaderProgram(const char* vp, const char* gp, const char* fp);
 	GLuint createShaderProgram(const char* vp, const char* fp);
+
+	// load textures
+	GLuint loadTexture(const char* texImagePath);
 	
 private:
 	// Error handling functions
