@@ -10,10 +10,11 @@
 #include "glm\gtc\matrix_transform.hpp"
 #include "util.h"
 #include "Sphere.h"
+#include "Torus.h"
 using namespace std;
 
 #define numVAOs 1
-#define numVBOs 3
+#define numVBOs 4
 
 float cameraX, cameraY, cameraZ;
 GLuint renderingProgram;
@@ -22,7 +23,7 @@ GLuint vbo[numVBOs];
 GLuint mapTexture;
 util utility;
 stack<glm::mat4> mvStack;
-Sphere mySphere(48);
+Torus myTorus(1.5f, 0.6f, 48);
 
 // allocate variables used in display() function, so that they won't need to be allocated 
 // during rendering 
@@ -35,10 +36,10 @@ glm::mat4 pMat, vMat, mMat, mvMat, tMat, rMat;
 // 36 vertices, 12 triangles, makes a 2x2x2 cube placed at the origin 
 void setupVertices(void) {
 
-	std::vector<int> ind = mySphere.getIndices();
-	std::vector<glm::vec3> vert = mySphere.getVertices();
-	std::vector<glm::vec2> tex = mySphere.getTexCoords();
-	std::vector<glm::vec3> norm = mySphere.getNormals();
+	std::vector<int> ind = myTorus.getIndices();
+	std::vector<glm::vec3> vert = myTorus.getVertices();
+	std::vector<glm::vec2> tex = myTorus.getTexCoords();
+	std::vector<glm::vec3> norm = myTorus.getNormals();
 
 	// vertex positions
 	std::vector<float> pvalues;
@@ -49,7 +50,7 @@ void setupVertices(void) {
 	// normal vectors
 	std::vector<float> nvalues;
 
-	int numIndices = mySphere.getNumIndices();
+	int numIndices = myTorus.getNumIndices();
 
 	for (int i = 0; i < numIndices; i++) {
 		pvalues.push_back((vert[ind[i]]).x);
@@ -66,7 +67,7 @@ void setupVertices(void) {
 
 	glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
-	glGenBuffers(3, vbo);
+	glGenBuffers(4, vbo);
 
 	// put the vertices into buffer #0
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -79,6 +80,10 @@ void setupVertices(void) {
 	// put the texture coordinates into buffer #2
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, nvalues.size() * 4, &nvalues[0], GL_STATIC_DRAW);
+
+	// indices
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind.size() * 4, &ind[0], GL_STATIC_DRAW);
 
 }
 
@@ -145,12 +150,15 @@ void display(GLFWwindow* window, double currentTime) {
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
 
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+	glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, 0, 0);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mapTexture);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices()); // draw the sun
+	glDrawArrays(GL_TRIANGLES, 0, myTorus.getNumIndices()); // draw the sun
 	mvStack.pop();
 	mvStack.pop();
 }
