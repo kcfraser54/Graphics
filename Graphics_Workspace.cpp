@@ -50,19 +50,19 @@ void setupVertices(void) {
 	// normal vectors
 	std::vector<float> nvalues;
 
-	int numIndices = myTorus.getNumIndices();
+	int numVertices = myTorus.getNumVertices();
 
-	for (int i = 0; i < numIndices; i++) {
-		pvalues.push_back((vert[ind[i]]).x);
-		pvalues.push_back((vert[ind[i]]).y);
-		pvalues.push_back((vert[ind[i]]).z);
+	for (int i = 0; i < numVertices; i++) {
+		pvalues.push_back(vert[i].x);
+		pvalues.push_back(vert[i].y);
+		pvalues.push_back(vert[i].z);
 
-		tvalues.push_back((tex[ind[i]]).s);
-		tvalues.push_back((tex[ind[i]]).t);
+		tvalues.push_back(tex[i].s);
+		tvalues.push_back(tex[i].t);
 
-		nvalues.push_back((norm[ind[i]]).x);
-		nvalues.push_back((norm[ind[i]]).y);
-		nvalues.push_back((norm[ind[i]]).z);
+		nvalues.push_back(norm[i].x);
+		nvalues.push_back(norm[i].y);
+		nvalues.push_back(norm[i].z);
 	}
 
 	glGenVertexArrays(1, vao);
@@ -150,15 +150,13 @@ void display(GLFWwindow* window, double currentTime) {
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-	glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, 0, 0);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mapTexture);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, myTorus.getNumIndices()); // draw the sun
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	glDrawElements(GL_TRIANGLES, myTorus.getNumIndices(), GL_UNSIGNED_INT, 0); // draw the sun
 	mvStack.pop();
 	mvStack.pop();
 }

@@ -100,7 +100,7 @@ void Torus::init() {
 		vertices[i] = glm::vec3(initPos + glm::vec3(inner, 0.0f, 0.0f));
 
 		// compute the texture coordinates for each vertex on the ring 
-		texCoords[i] = glm::vec2(0.0f, (float)i / float(prec));
+		texCoords[i] = glm::vec2(0.0f, ((float)i / (float)prec));
 
 		// Compute the tangents and normals -- first tangent is Y-axis rotated around Z
 		rMat = glm::rotate(glm::mat4(1.0f), amt, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -113,9 +113,7 @@ void Torus::init() {
 
 	// rotate the first ring about Y to get the other rings
 	for (int ring = 1; ring < prec + 1; ring++) {
-		int i = 0;
 		for (int vert = 0; vert < prec + 1; vert++) {
-
 			// rotate the vertex positions of the original ring around the y axis
 			float amt = (float)(toRadians(ring * 360.0f / prec));
 			glm::mat4 rMat = glm::rotate(glm::mat4(1.0f), amt, glm::vec3(0.0f, 1.0f, 0.0f));

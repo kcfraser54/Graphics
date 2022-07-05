@@ -17,7 +17,7 @@ mat4 buildTranslate(float x, float y, float z);
 mat4 buildScale(float x, float y, float z);
 
 void main(void) { 
-	gl_Position = buildRotateZ(45) * proj_matrix * mv_matrix * vec4(position, 1.0);
+	gl_Position = proj_matrix * mv_matrix * vec4(position, 1.0);
 	tc = texCoord;
 }
 
