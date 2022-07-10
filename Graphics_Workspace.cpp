@@ -249,7 +249,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// last two parameters allow for full screen mode and window sharing 
-	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Gouraud shading", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Phong shading", NULL, NULL);
 
 	// Creating a glfw window does not automatically make the associated OpenGL context current
 	glfwMakeContextCurrent(window);
