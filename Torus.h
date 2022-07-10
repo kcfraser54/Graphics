@@ -20,6 +20,7 @@ public:
 	std::vector<glm::vec3> getNormals();
 	std::vector<glm::vec3> getStangents();
 	std::vector<glm::vec3> getTtangents();
+	float toRadians(float degrees);
 
 private:
 	int numVertices;
@@ -33,7 +34,6 @@ private:
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec3> sTangents;
 	std::vector<glm::vec3> tTangents;
-	float toRadians(float degrees);
 	void init();
 };
 

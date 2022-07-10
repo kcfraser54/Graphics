@@ -152,7 +152,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Graphics_Workspace.cpp" />
+    <ClCompile Include="ImportedModel.cpp" />
     <ClCompile Include="matrixUtils.cpp" />
+    <ClCompile Include="ModelImporter.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Torus.cpp" />
     <ClCompile Include="util.cpp" />
@@ -163,7 +165,9 @@
     <None Include="vertShader.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImportedModel.h" />
     <ClInclude Include="matrixUtils.h" />
+    <ClInclude Include="ModelImporter.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Torus.h" />
     <ClInclude Include="util.h" />

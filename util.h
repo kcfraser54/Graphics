@@ -20,6 +20,29 @@ public:
 
 	// load textures
 	GLuint loadTexture(const char* texImagePath);
+
+
+	// materials
+
+	// GOLD material - ambient, diffuse, specular, and shininess
+	float* goldAmbient();
+	float* goldDiffuse();
+	float* goldSpecular();
+	float goldShininess();
+
+	// SILVER material - ambient, diffuse, specular, and shininess
+	float* silverAmbient();
+	float* silverDiffuse();
+	float* silverSpecular();
+	float silverShininess();
+
+	// BRONZE materials - ambient, diffuse, specular, and shininess
+	float* bronzeAmbient();
+	float* bronzeDiffuse();
+	float* bronzeSpecular();
+	float bronzeShininess();
+
+
 	
 private:
 	// Error handling functions

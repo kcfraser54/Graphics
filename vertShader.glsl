@@ -1,69 +1,60 @@
 #version 430 
-layout (location=0) in vec3 position;
-layout (location=1) in vec2 texCoord;
+layout (location=0) in vec3 vertPos;
+layout (location=1) in vec3 vertNormal;
+out vec4 varyingColor;
 
-// texture coordinate output to rasterizer for interpolation
-out vec2 tc; 
+struct positionalLight
+{
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec3 position;
+};
 
+struct Material
+{
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	float shininess;
+};
+
+uniform vec4 globalAmbient;
+uniform positionalLight light;
+uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 
-layout (binding=0) uniform sampler2D samp;  // not used in the vertex shader 
+// for transforming normals
+uniform mat4 norm_matrix;
 
-mat4 buildRotateX(float rad);
-mat4 buildRotateY(float rad);
-mat4 buildRotateZ(float rad);
-mat4 buildTranslate(float x, float y, float z);
-mat4 buildScale(float x, float y, float z);
-
-void main(void) { 
-	gl_Position = proj_matrix * mv_matrix * vec4(position, 1.0);
-	tc = texCoord;
-}
-
-mat4 buildTranslate(float x, float y, float z) {
-	mat4 translate = mat4(1.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0,
-		x, y, z, 1.0);
+void main(void)
+{   vec4 color;
 	
-	return translate;
-}
+	// convert vertex positions to view space,
+	// convert normal to view space, and calculate
+	// view space light vector (from vertex to light)
 
-mat4 buildRotateX(float rad) {
-	mat4 rotateX = mat4(1.0, 0.0, 0.0, 0.0,
-		0.0, cos(rad), -sin(rad), 0.0,
-		0.0, sin(rad), cos(rad), 0.0,
-		0.0, 0.0, 0.0, 1.0);
+	vec4 P = mv_matrix * vec4(vertPos, 1.0);
+	vec3 N = normalize((norm_matrix * vec4(vertNormal, 1.0)).xyz);
+	vec3 L = normalize(light.position - P.xyz);
 
-	return rotateX;
-}
+	// view vector is equivalent to the negative view space vertex position
+	vec3 V = normalize(-P.xyz);
 
-mat4 buildRotateY(float rad) {
-	mat4 rotateY = mat4(cos(rad), 0.0, sin(rad), 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		-sin(rad), 0.0, cos(rad), 0.0,
-		0.0, 0.0, 0.0, 1.0);
+	// R is a reflection of -L with respect to surface normal N
+	vec3 R = reflect(-L, N);
 
-	return rotateY;
-}
+	// ambient, diffuse, and specular contributions
+	vec3 ambient = ((globalAmbient * material.ambient) + (light.ambient * material.ambient)).xyz;
+	vec3 diffuse = light.diffuse.xyz * material.diffuse.xyz * max(dot(N,L), 0.0);
+	vec3 specular = material.specular.xyz * light.specular.xyz * pow(max(dot(R,V), 0.0f), material.shininess);
 
-mat4 buildRotateZ(float rad) {
-	mat4 rotateZ = mat4(cos(rad), -sin(rad), 0.0, 0.0,
-		sin(rad), cos(rad), 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 1.0);
-
-	return rotateZ;
-}
-
-mat4 buildScale(float x, float y, float z) {
-	mat4 scale = mat4(x, 0.0, 0.0, 0.0,
-		0.0, y, 0.0, 0.0,
-		0.0, 0.0, z, 0.0,
-		0.0, 0.0, 0.0, 1.0);
-
-	return scale;
+	// send the color output to the fragment shader
+	varyingColor = vec4((ambient + diffuse + specular), 1.0);
+	
+	// send the position to the fragment shader, as before
+	gl_Position = proj_matrix * mv_matrix * vec4(vertPos, 1.0);
 }
 
 
