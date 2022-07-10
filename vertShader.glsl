@@ -11,6 +11,9 @@ out vec3 varyingLightDir;
 // vertex position in eye space 
 out vec3 varyingVertPos;
 
+// half-vector "H" is an additional output varying 
+out vec3 varyingHalfVector;
+
 struct positionalLight
 {
 	vec4 ambient;
@@ -42,6 +45,7 @@ void main(void)
 	varyingVertPos = (mv_matrix * vec4(vertPos, 1.0)).xyz;
 	varyingLightDir = light.position - varyingVertPos;
 	varyingNormal = (norm_matrix * vec4(vertNormal, 1.0)).xyz;
+	varyingHalfVector = (varyingLightDir + (-varyingVertPos)).xyz;
 
 	gl_Position= proj_matrix * mv_matrix * vec4(vertPos, 1.0);
 }
