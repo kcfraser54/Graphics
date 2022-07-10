@@ -124,7 +124,7 @@ void init(GLFWwindow* window) {
 
 	torLocX = 0.0f;
 	torLocY = 0.0f;
-	torLocZ = 3.5f;
+	torLocZ = 4.2f;
 
 	setupVertices();
 
@@ -195,7 +195,7 @@ void display(GLFWwindow* window, double currentTime) {
 	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(torLocX, torLocY, torLocZ));
 	
 	// rotate the torus to make it easier to see
-	mMat *= glm::rotate(mMat, myTorus.toRadians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	mMat *= glm::rotate(mMat, myTorus.toRadians(35.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	// set up lights based on the current light's position
 	currentLightPos = glm::vec3(initialLightLoc.x, initialLightLoc.y, initialLightLoc.z);
