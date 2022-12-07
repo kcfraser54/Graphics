@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,6 +24,7 @@
     <ProjectGuid>{0b37f93d-6113-497a-86db-ef3997a08476}</ProjectGuid>
     <RootNamespace>GP1_1_Getting_Started</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Kyle's_Graphics_Project</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -155,22 +156,39 @@
     <ClCompile Include="ImportedModel.cpp" />
     <ClCompile Include="matrixUtils.cpp" />
     <ClCompile Include="ModelImporter.cpp" />
+    <ClCompile Include="ShaderUtil.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Torus.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\..\GL\template\glew32d.dll" />
-    <None Include="fragShader.glsl" />
+    <None Include="fragShader1.glsl" />
+    <None Include="fragShader2.glsl" />
     <None Include="vertShader.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.h" />
     <ClInclude Include="ImportedModel.h" />
     <ClInclude Include="matrixUtils.h" />
     <ClInclude Include="ModelImporter.h" />
+    <ClInclude Include="ShaderUtil.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Torus.h" />
     <ClInclude Include="util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="awesomeface.png" />
+    <Image Include="bubbles.png" />
+    <Image Include="R.png" />
+    <Image Include="ricky.png" />
+    <Image Include="space.jpg" />
+    <Image Include="tenders.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="GLSL_Notes.txt" />
+    <Text Include="texture_notes.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

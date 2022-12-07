@@ -5,7 +5,20 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <string>
 #include <SOIL2/SOIL2.h>
+#include <glm\glm.hpp>
+#include <glm\gtc\type_ptr.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+// #define STB_IMAGE_IMPLEMENTATION
+// #include "stb_image.h" 
+
+// avoid using assert.h
+// #define STBI_ASSERT(x)
+
+// Avoid using malloc, realloc, and free
+// #define STBI_MALLOC, STBI_REALLOC, STBI_FREE
 using namespace std;
 
 
@@ -131,7 +144,7 @@ GLuint util::loadTexture(const char* texImagePath) {
 	textureID = SOIL_load_OGL_texture(texImagePath,
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
 	if (textureID == 0) {
-		cout << "could not find texture file " << texImagePath << endl;
+		cout << "could not find texture file" << texImagePath << endl;
 	}
 
 	// If mipmapping 
@@ -209,4 +222,46 @@ float* util::bronzeSpecular() {
 
 float util::bronzeShininess() {
 	return 25.6f;
+}
+
+/*
+// LearnOpenGL loadCubeMap function 
+unsigned int loadCubeMap(vector<std::string> faces) {
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < faces.size(); i++) {
+		unsigned char* data = stbi_load(faces[i].c_str(),
+			&width, &height, &nrChannels, 0);
+
+		if (data) {
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			stbi_image_free(data);
+		}
+		else {
+			std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+
+}
+*/
+
+void util::printMaxVertexAttributes() 
+{
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	std::cout << "Maximum number of vertex attributes supported: " << nrAttributes << std::endl;
+
 }

@@ -1,0 +1,42 @@
+GLSL NOTES
+======================================
+
+1. Types
+---------------------------------------
+- int 
+- float
+- double
+- uint,
+- bbol
+
+2. Container Types:
+--------------------------------------
+- vectors
+- matrixes
+
+3. Vectors:
+--------------------------------------
+- vecn: the default vector of n floats
+- bvecn: a vector of n booleans
+- ivecn: a vector of n integers
+- uvecn: a vector of n unsigned integers
+- dvecn: a vector of n double components
+
+- x, y, z, w for vector coordinates
+- r, g, b, a for colors coordinates
+- s, t, p, q for texture coordinates
+
+4. Swizzling
+---------------------------------------
+vec2 someVec;
+vec4 differentVec = someVec.xyxx;
+vec3 anotherVec = differentVec.zyw;
+vec4 otherVec = someVec.xxxx + anotherVec.yxzy;
+
+5. Uniforms
+----------------------------------------
+- f: the function expects a float as its value
+- i: the function expects an int as its value
+- ui: the function expects an unsigned int as its value
+- 3f: the function expects 3 floats as its value
+- fv: the function expects a float vector/array as its value

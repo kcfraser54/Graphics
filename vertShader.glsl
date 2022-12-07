@@ -1,70 +1,15 @@
-#version 430 
-layout (location=0) in vec3 vertPos;
-layout (location=1) in vec3 vertNormal;
+#version 430 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 aTexCoord;
 
-// eye-space vertex normal
-out vec3 varyingNormal;
+out vec2 TexCoord;
 
-// vector point to the light
-out vec3 varyingLightDir;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-// vertex position in eye space 
-out vec3 varyingVertPos;
-
-// half-vector "H" is an additional output varying 
-out vec3 varyingHalfVector;
-
-struct positionalLight
+void main()
 {
-	vec4 ambient;
-	vec4 diffuse;
-	vec4 specular;
-	vec3 position;
-};
-
-struct Material
-{
-	vec4 ambient;
-	vec4 diffuse;
-	vec4 specular;
-	float shininess;
-};
-
-uniform vec4 globalAmbient;
-uniform positionalLight light;
-uniform Material material;
-uniform mat4 mv_matrix;
-uniform mat4 proj_matrix;
-
-// for transforming normals
-uniform mat4 norm_matrix;
-
-void main(void)
-{   
-	// output vertex position, light direction, and normal to the rasterizer or interpolation 
-	varyingVertPos = (mv_matrix * vec4(vertPos, 1.0)).xyz;
-	varyingLightDir = light.position - varyingVertPos;
-	varyingNormal = (norm_matrix * vec4(vertNormal, 1.0)).xyz;
-	varyingHalfVector = (varyingLightDir + (-varyingVertPos)).xyz;
-
-	gl_Position= proj_matrix * mv_matrix * vec4(vertPos, 1.0);
+	gl_Position = projection * view * model * vec4(aPos, 1.0f);
+	TexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -42,7 +42,9 @@ public:
 	float* bronzeSpecular();
 	float bronzeShininess();
 
+	//unsigned int loadCubeMap(vector<std::string> faces);
 
+	void printMaxVertexAttributes();
 	
 private:
 	// Error handling functions
@@ -52,5 +54,6 @@ private:
 
 	// read shader source code
 	string readShaderSource(const char* filePath);
+
 };
 

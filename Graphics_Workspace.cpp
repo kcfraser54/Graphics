@@ -1,243 +1,320 @@
 #include <iostream>
 #include <GL\glew.h>
-#include <GLFW\glfw3.h>
+#include <GLFW/glfw3.h>
 #include <string>
 #include <fstream>
 #include <cmath>
 #include <stack>
-#include "glm\glm.hpp"
-#include "glm\gtc\type_ptr.hpp"
-#include "glm\gtc\matrix_transform.hpp"
+#include <glm\glm.hpp>
+#include <glm\gtc\type_ptr.hpp>
+#include <glm\gtc\matrix_transform.hpp>
 #include "util.h"
-#include "Torus.h"
-using namespace std;
+#include "ShaderUtil.h"
+#include "stb_image.h"
+#include "camera.h"
 
-// declarations for building shaders and rendering programs, as before.
-// declaration of one VAO, and two VBOs, and Torus as before 
-// declaration and assignment of torus and camera location as before.
-// Utils.cpp now has gold, silver, and bronze material accessors added
+void setupVerticesAndBuffers(bool wireframe, ShaderUtil shader);
+void display(ShaderUtil shader);
+void init(void);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow* window);
+void moveCameraWithUserInput(GLFWwindow* window);
 
-#define numVAOs 1
-#define numVBOs 4
 
-float cameraX, cameraY, cameraZ;
-GLuint renderingProgram;
-GLuint vao[numVAOs];
-GLuint vbo[numVBOs];
-GLuint mapTexture;
+
+// VBO: Vertex Buffer Objects 
+GLuint VBO;
+GLuint VAO;
+GLuint EBO;
+unsigned int texture1;
+unsigned int texture2;
 util utility;
-Torus myTorus(0.5f, 0.2f, 48);
+
+// screen size
+const unsigned int SCR_WIDTH = 1200;
+const unsigned int SCR_HEIGHT = 900;
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+bool firstMouse = true;
+
+// the time between the current frame and last frame 
+float deltaTime = 0.0f;
+// the time of last frame 
+float lastFrame = 0.0f;
 
 
-// allocate variables used in display() function, so that they won't need to be allocated 
-// during rendering 
-GLuint mvLoc, projLoc, vLoc, tfLoc, mLoc, nLoc;
-int width, height, tf, timeFactor;
-float aspect;
-glm::mat4 pMat, vMat, mMat, mvMat, tMat, rMat, invTrMat;
-float torLocX, torLocY, torLocZ;
-// locations for shader uniform variables
-GLuint globalAmbLoc, diffLoc, specLoc, posLoc, mAmbLoc, mDiffLoc, mShiLoc, ambLoc, mSpecLoc;
+float mixValue;
 
-// light position as Vector3f, in both model and view space 
-glm::vec3 currentLightPos, lightPosV;
-
-// light position as float array
-float lightPos[3];
-
-// initial light location 
-glm::vec3 initialLightLoc = glm::vec3(5.0f, 2.0f, 2.0f);
-
-// white light properties
-float globalAmbient[4] = { 0.7f, 0.7f, 0.7f, 1.0f };
-float lightAmbient[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-float lightDiffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-float lightSpecular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-// gold material properties
-float* matAmb = utility.goldAmbient();
-float* matDif = utility.goldDiffuse();
-float* matSpe = utility.goldSpecular();
-float matShi = utility.goldShininess();
- 
+float lastX;
+float lastY;
 
 
+// dynamically change window size
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
 
-// 36 vertices, 12 triangles, makes a 2x2x2 cube placed at the origin 
-void setupVertices(void) {
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
 
-	std::vector<int> ind = myTorus.getIndices();
-	std::vector<glm::vec3> vert = myTorus.getVertices();
-	std::vector<glm::vec2> tex = myTorus.getTexCoords();
-	std::vector<glm::vec3> norm = myTorus.getNormals();
-
-	// vertex positions
-	std::vector<float> pvalues;
-
-	// texture coordinates
-	std::vector<float> tvalues;
-
-	// normal vectors
-	std::vector<float> nvalues;
-
-	int numVertices = myTorus.getNumVertices();
-	for (int i = 0; i < numVertices; i++) {
-		pvalues.push_back(vert[i].x);
-		pvalues.push_back(vert[i].y);
-		pvalues.push_back(vert[i].z);
-
-		tvalues.push_back(tex[i].s);
-		tvalues.push_back(tex[i].t);
-
-		nvalues.push_back(norm[i].x);
-		nvalues.push_back(norm[i].y);
-		nvalues.push_back(norm[i].z);
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
 	}
 
-	glGenVertexArrays(1, vao);
-	glBindVertexArray(vao[0]);
-	glGenBuffers(4, vbo);
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
 
-	// put the vertices into buffer #0
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, pvalues.size() * 4, &pvalues[0], GL_STATIC_DRAW);
+	// I should change the following value to my liking
+	float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
 
-	// put the texture coordinates into buffer #1
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, tvalues.size() * 4, &tvalues[0], GL_STATIC_DRAW);
-
-	// put the texture coordinates into buffer #2
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, nvalues.size() * 4, &nvalues[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]); // indices
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind.size() * 4, &ind[0], GL_STATIC_DRAW);
-
-}
-
-
-void init(GLFWwindow* window) {
-	renderingProgram = utility.createShaderProgram("vertShader.glsl", "fragShader.glsl");
-	cameraX = 0.0f;
-	cameraY = 0.0f;
-	cameraZ = 10.0f;
-
-	torLocX = 0.0f;
-	torLocY = 0.0f;
-	torLocZ = 4.2f;
-
-	setupVertices();
-
-	glfwGetFramebufferSize(window, &width, &height);
-	aspect = (float)width / (float)height;
-	pMat = glm::perspective(1.0472f, aspect, 0.01f, 1000.0f);
-
-	// Load in the texture image 
-	//mapTexture = utility.loadTexture("map.jpg");
-}
-
-void window_reshape_callback(GLFWwindow* window, int newWidth, int newHeight) {
-
-	// new width and height provided by the callback 
-	aspect = (float)newWidth / (float)newHeight;
-
-	// sets screen region associated with framebuffer
-	glViewport(0, 0, newWidth, newHeight);
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
-}
-
-void installLights(glm::mat4 vMatrix) {
-	// convert light's position to view space, and save it in a float array 
-	lightPosV = glm::vec3(vMatrix * glm::vec4(currentLightPos, 1.0));
-	lightPos[0] = lightPosV.x;
-	lightPos[1] = lightPosV.y;
-	lightPos[2] = lightPosV.z;
-
-	// get the locations of the light and material fields
-	globalAmbLoc = glGetUniformLocation(renderingProgram, "globalAmbient");
-	ambLoc = glGetUniformLocation(renderingProgram, "light.ambient");
-	diffLoc = glGetUniformLocation(renderingProgram, "light.diffuse");
-	specLoc = glGetUniformLocation(renderingProgram, "light.specular");
-	posLoc = glGetUniformLocation(renderingProgram, "light.position");
-	mAmbLoc = glGetUniformLocation(renderingProgram, "material.ambient");
-    mDiffLoc = glGetUniformLocation(renderingProgram, "material.diffuse");
-	mSpecLoc = glGetUniformLocation(renderingProgram, "material.specular");
-	mShiLoc = glGetUniformLocation(renderingProgram, "material.shininess");
-
-	// set the uniform light and materials in the shader
-	glProgramUniform4fv(renderingProgram, globalAmbLoc, 1, globalAmbient);
-	glProgramUniform4fv(renderingProgram, ambLoc, 1, lightAmbient);
-	glProgramUniform4fv(renderingProgram, diffLoc, 1, lightDiffuse);
-	glProgramUniform4fv(renderingProgram, specLoc, 1, lightSpecular);
-	glProgramUniform4fv(renderingProgram, posLoc, 1, lightPos);
-	glProgramUniform4fv(renderingProgram, mAmbLoc, 1, matAmb);
-	glProgramUniform4fv(renderingProgram, mDiffLoc, 1, matDif);
-	glProgramUniform4fv(renderingProgram, mSpecLoc, 1, matSpe);
-	glProgramUniform1f(renderingProgram, mShiLoc, matShi);
-}
-
-void display(GLFWwindow* window, double currentTime) {
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glUseProgram(renderingProgram);
-
-	// uniform variables 
-	mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
-	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
-	nLoc = glGetUniformLocation(renderingProgram, "norm_matrix");
-
-
-	// push view matrix onto the stack 
-	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
-
-	// Build the model matrix based on the torus location 
-	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(torLocX, torLocY, torLocZ));
+	lastX = xpos;
+	lastY = ypos;
 	
-	// rotate the torus to make it easier to see
-	mMat *= glm::rotate(mMat, myTorus.toRadians(35.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	camera.ProcessMouseMovement(xoffset, yoffset);
+}
 
-	// set up lights based on the current light's position
-	currentLightPos = glm::vec3(initialLightLoc.x, initialLightLoc.y, initialLightLoc.z);
-	installLights(vMat);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
+{
 
-	// build the model-view matrix by concatenating matrices v and m, as before
-	mvMat = vMat * mMat;
+	camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
 
-	// build the inverse transpose of the MV matrix, for transforming normal vectors
-	invTrMat = glm::transpose(glm::inverse(mvMat));
+// process user input 
+void processInput(GLFWwindow* window) 
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window, true);
+	}
 
-	// put the MV, PROJ, and inverse-transpose (normal) matrixes into corresponding uniforms
-    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
-	glUniformMatrix4fv(nLoc, 1, GL_FALSE, glm::value_ptr(invTrMat));
+	moveCameraWithUserInput(window);
+}
 
-	// bind the vertices buffer (VBO #0) to vertex attribute #0 in the vertex shader
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+void moveCameraWithUserInput(GLFWwindow* window) {
+	
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// initialize shaders, setup vertices, setup vertex buffers
+void init(void) {}
+
+void setupVerticesAndBuffers(ShaderUtil shader)
+{
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	
+	// Generate vertex arrays and buffers
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	
+
+	// bind the vertex array object first, then bind and set vertex buffer(s),
+	// and then configure vertex attribute(s)
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
-	// bind the normals buffer (in VBO #2) to vertex attribute #1 in the vertex shader
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+	
+	// texture coord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	// load and create a texture
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	
+	// set texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
-	glDrawElements(GL_TRIANGLES, myTorus.getNumIndices(), GL_UNSIGNED_INT, 0);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+
+	unsigned char* data = stbi_load("./space.jpg", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+
+	stbi_image_free(data);
+
+	// second image
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+
+	// set texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// set filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+	data = stbi_load("./gandalf.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	
+	stbi_image_free(data);
+
+	shader.use();
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
+
+	//if (wireframe)
+	//{
+	//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//}
+}
+
+void display(ShaderUtil shader) {
+
+	// world space positions of our cubes
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+	// clear the color buffer and the depth buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// bind texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+
+	// activate the shader 
+	shader.use();
+	
+	// camera/view transformation
+	glm::mat4 view = camera.GetViewMatrix();
+	
+	// projection matrix
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+	// pass transformation matrices to the shader
+	unsigned int projectionLoc = glGetUniformLocation(shader.ID, "projection");
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+
+
+	glBindVertexArray(VAO);
+	for (unsigned int i = 0; i < 10; i++) {
+		// calculate the model matrix for each object and pass it to the
+		// shader before drawing
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, cubePositions[i]);
+		float angle = 20.0f * i;
+		model = glm::rotate(model, glm::radians(angle) * (float) glfwGetTime(), glm::vec3(1.0f, 0.3f, 0.5f));
+		unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	}
 }
 
 
-/*
-* Main includes a very simple rendering loop that calls out display() function repeatedly
-* It also calls glfwSwapBuffers(), which paints the screen, and glfwPollEvents(), which handles
-* other window related events (such as key being pressed)
-*/
+
 int main() {
+	//bool wireframe = false;
+	//char wireframeOption;
 
 	// glfw library initialized
 	if (!glfwInit()) {
@@ -249,32 +326,65 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
 	// last two parameters allow for full screen mode and window sharing 
-	GLFWwindow* window = glfwCreateWindow(1000, 1000, "Blinn-Phong shading", NULL, NULL);
-
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Kyle's Project", NULL, NULL);
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
 	// Creating a glfw window does not automatically make the associated OpenGL context current
 	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// tell GLFW to capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// glew library initialized 
 	if (glewInit() != GLEW_OK) {
+		std::cout << "Failed to initialize GLEW" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+	
+	//utility.printMaxVertexAttributes();
+	//std::cout << "Draw Wireframe (y/n): ";
+	//cin >> wireframeOption;
+	//if (wireframeOption == 'y' || wireframeOption == 'yes' || wireframeOption == 'Y' || wireframeOption == 'Yes' || wireframeOption == 'YES')
+	//{
+    //		wireframe = true;
+	//}
+	// shader
+	ShaderUtil shader("vertShader.glsl", "fragShader1.glsl");
+	setupVerticesAndBuffers(shader);
 
-	// vertical synchronization enabled
-	glfwSwapInterval(1);
+	glEnable(GL_DEPTH_TEST);
 
-	glfwSetWindowSizeCallback(window, window_reshape_callback);
-	init(window);
+	// render loop 
+	while(!glfwWindowShouldClose(window))
+	{
+		// with each frame, calculate the delta time value for later use
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 
-	while (!glfwWindowShouldClose(window)) {
-		display(window, glfwGetTime());
+		// input
+		processInput(window);
 
-		// vertical synchronization enabled 
-		glfwSwapBuffers(window);
+		// rendering commands here
+		///...
+		display(shader);
+
+		// check and call events and swap the buffers 
 		glfwPollEvents();
+		glfwSwapBuffers(window);
+
 	}
 
-	glfwDestroyWindow(window);
+	// de-allocate all resources once they've outlived their purpose
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 	glfwTerminate();
-
 	exit(EXIT_SUCCESS);
 }

@@ -16,11 +16,14 @@ ImportedModel::ImportedModel(const char* filePath) {
 	std::vector<float> tcs = modelImporter.getTextureCoordinates();
 	std::vector<float> normals = modelImporter.getNormals();
 
+
 	for (int i = 0; i < numVertices; i++) {
 		vertices.push_back(glm::vec3(verts[i * 3], verts[i * 3 + 1], verts[i * 3 + 2]));
 		texCoords.push_back(glm::vec2(tcs[i * 2], tcs[i * 2 + 1]));
 		normalVecs.push_back(glm::vec3(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]));
 	}
+
+	
 }
 
 int ImportedModel::getNumVertices() {

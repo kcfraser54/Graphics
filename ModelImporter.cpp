@@ -8,6 +8,9 @@ using namespace std;
 ModelImporter::ModelImporter(){}
 
 void ModelImporter::parseOBJ(const char* filePath) {
+
+	cout << "Object File path: " << filePath << endl;
+
 	float x, y, z;
 	string content;
 	ifstream fileStream(filePath, ios::in);
@@ -15,8 +18,9 @@ void ModelImporter::parseOBJ(const char* filePath) {
 	string line = "";
 	while (!fileStream.eof()) {
 		getline(fileStream, line);
-		if (line.compare(0, 2, "v") == 0) {
-			stringstream ss(line.erase(0, 1));
+		if (line.compare(0, 2, "v ") == 0) {
+			cout << "vertex found" << endl;
+			stringstream ss(line.erase(0, 2));
 			ss >> x;
 			ss >> y;
 			ss >> z;
@@ -26,6 +30,7 @@ void ModelImporter::parseOBJ(const char* filePath) {
 		}
 
 		if (line.compare(0, 2, "vt") == 0) {
+			cout << "texture coordinate found" << endl;
 			stringstream ss(line.erase(0, 2));
 			ss >> x;
 			ss >> y;
@@ -34,6 +39,7 @@ void ModelImporter::parseOBJ(const char* filePath) {
 		}
 
 		if (line.compare(0, 2, "vn") == 0) {
+			cout << "normals found" << endl;
 			stringstream ss(line.erase(0, 2));
 			ss >> x;
 			ss >> y;
@@ -43,7 +49,8 @@ void ModelImporter::parseOBJ(const char* filePath) {
 			normVals.push_back(z);
 		}
 
-		if (line.compare(0, 2, "f") == 0) {
+		if (line.compare(0, 2, "f ") == 0) {
+			cout << "faces found" << endl;
 			string oneCorner, v, t, n;
 			stringstream ss(line.erase(0, 2));
 			for (int i = 0; i < 3; i++) {
@@ -80,7 +87,7 @@ void ModelImporter::parseOBJ(const char* filePath) {
 
 // Accessors
 int ModelImporter::getNumVertices() {
-	return (triangleVerts.size() / 3);
+	return (triangleVerts.size()/3);
 }
 
 std::vector<float> ModelImporter::getVertices() {

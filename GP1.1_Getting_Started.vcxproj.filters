@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\assets">
+      <UniqueIdentifier>{155c0f15-42dc-4928-986f-47f9903186ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics_Workspace.cpp">
@@ -36,13 +39,19 @@
     <ClCompile Include="ModelImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\..\GL\template\glew32d.dll" />
-    <None Include="fragShader.glsl">
+    <None Include="fragShader1.glsl">
       <Filter>Source Files</Filter>
     </None>
     <None Include="vertShader.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="fragShader2.glsl">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
@@ -62,8 +71,41 @@
     <ClInclude Include="ImportedModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ModelImporter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="space.jpg">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="awesomeface.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="R.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="ricky.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="bubbles.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="tenders.png">
+      <Filter>Source Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="GLSL_Notes.txt" />
+    <Text Include="texture_notes.txt" />
   </ItemGroup>
 </Project>
