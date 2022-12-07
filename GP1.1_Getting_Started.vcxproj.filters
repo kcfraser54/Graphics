@@ -54,6 +54,18 @@
     <None Include="fragShader2.glsl">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="ColorsVertexShader.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="ColorsFragmentShader.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="LightCubeVertexShader.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="LightCubeFragmentShader.glsl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="util.h">

@@ -163,8 +163,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\..\GL\template\glew32d.dll" />
+    <None Include="ColorsFragmentShader.glsl" />
+    <None Include="ColorsVertexShader.glsl" />
     <None Include="fragShader1.glsl" />
     <None Include="fragShader2.glsl" />
+    <None Include="LightCubeFragmentShader.glsl" />
+    <None Include="LightCubeVertexShader.glsl" />
     <None Include="vertShader.glsl" />
   </ItemGroup>
   <ItemGroup>

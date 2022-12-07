@@ -1,5 +1,8 @@
 #include <GL\glew.h>
 #include <GLFW/glfw3.h>
+#include <glm\glm.hpp>
+#include <glm\gtc\type_ptr.hpp>
+#include <glm\gtc\matrix_transform.hpp>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -101,6 +104,40 @@ void ShaderUtil::setFloat4f(const std::string& name, float r, float g, float b, 
 {
 	glUniform4f(glGetUniformLocation(ID, name.c_str()), r, g, b, a);
 }
+
+void ShaderUtil::setVec2(const std::string &name, const glm::vec2 &value) const 
+{
+	glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+}
+
+void ShaderUtil::setVec3(const std::string& name, const glm::vec3 &value) const
+{
+	glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+}
+
+void ShaderUtil::setVec4(const std::string& name, const glm::vec4& value) const
+{
+	glUniform4fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+}
+
+// ------------------------------------------------------------------------
+void ShaderUtil::setMat2(const std::string& name, const glm::mat2& mat) const
+{
+	glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+// ------------------------------------------------------------------------
+void ShaderUtil::setMat3(const std::string& name, const glm::mat3& mat) const
+{
+	glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+// ------------------------------------------------------------------------
+void ShaderUtil::setMat4(const std::string& name, const glm::mat4& mat) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+
+
+
 
 void ShaderUtil::checkCompileErrors(unsigned int shader, std::string type)
 {
