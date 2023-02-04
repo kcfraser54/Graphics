@@ -119,7 +119,7 @@ public:
 		}
 
 		// makes moving around like a true fps
-		Position.y = 0.0f;
+		//Position.y = 0.0f;
 
 	}
 
